@@ -251,6 +251,55 @@ fn save_image(
 }
 
 #[tauri::command]
+fn import_md_file(source_path: String, target_folder: String) -> Result<String, String> {
+    let notes_dir = get_notes_dir();
+    let src = PathBuf::from(&source_path);
+
+    if !src.exists() {
+        return Err("Source file does not exist".to_string());
+    }
+    if !src.extension().map(|e| e == "md").unwrap_or(false) {
+        return Err("Only .md files can be imported".to_string());
+    }
+
+    let dest_dir = if target_folder.is_empty() {
+        notes_dir.clone()
+    } else {
+        let d = PathBuf::from(&target_folder);
+        if !d.starts_with(&notes_dir) {
+            return Err("Access denied: path outside notes directory".to_string());
+        }
+        d
+    };
+
+    let file_name = src
+        .file_name()
+        .ok_or("Invalid file name")?
+        .to_string_lossy()
+        .to_string();
+    let mut dest_path = dest_dir.join(&file_name);
+
+    // If file already exists, add a number suffix
+    if dest_path.exists() {
+        let stem = src
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let mut counter = 1;
+        loop {
+            dest_path = dest_dir.join(format!("{} ({}).md", stem, counter));
+            if !dest_path.exists() {
+                break;
+            }
+            counter += 1;
+        }
+    }
+
+    fs::copy(&src, &dest_path).map_err(|e| e.to_string())?;
+    Ok(dest_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 fn search_notes(query: String) -> Vec<(String, String, usize)> {
     let notes_dir = get_notes_dir();
     let mut results: Vec<(String, String, usize)> = Vec::new();
@@ -368,6 +417,7 @@ pub fn run() {
             get_notes_directory,
             save_image,
             search_notes,
+            import_md_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

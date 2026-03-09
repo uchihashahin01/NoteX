@@ -1,0 +1,11 @@
+[Desktop Entry]
+Categories=Utility;TextEditor;Development;
+Comment=A modern, lightweight note-taking app for developers
+Exec={exec_path} %u
+Icon={icon_path}
+Name=NoteX
+Terminal=false
+Type=Application
+Keywords=notes;markdown;code;developer;
+StartupWMClass=NoteX
+GenericName=Note Taking App

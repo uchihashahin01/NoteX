@@ -32,10 +32,13 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Undo,
+  Redo,
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { markdownToHtml, htmlToMarkdown } from '../utils/markdown';
-import CodeBlockWrapper from './CodeBlockWrapper';
+import CodeBlockView from './CodeBlockView';
+import { ReactNodeViewRenderer } from '@tiptap/react';
 
 const lowlight = createLowlight(common);
 
@@ -143,6 +146,10 @@ export default function Editor() {
       CodeBlockLowlight.configure({
         lowlight,
         defaultLanguage: 'plaintext',
+      }).extend({
+        addNodeView() {
+          return ReactNodeViewRenderer(CodeBlockView);
+        },
       }),
       Image.configure({
         inline: false,
@@ -319,12 +326,13 @@ export default function Editor() {
         </div>
       </BubbleMenu>
 
-      {/* Editor content with code block wrappers */}
+      {/* Editor content */}
       <div className="tiptap-editor" onClick={() => !toolbarVisible && setToolbarVisible(true)}>
-        <CodeBlockWrapper editor={editor}>
-          <EditorContent editor={editor} />
-        </CodeBlockWrapper>
+        <EditorContent editor={editor} />
       </div>
+
+      {/* Status bar */}
+      <EditorStatusBar editor={editor} />
     </div>
   );
 }
@@ -351,6 +359,21 @@ function EditorToolbar({
         minHeight: 40,
       }}
     >
+      <ToolbarGroup>
+        <ToolbarButton
+          icon={<Undo size={15} />}
+          onClick={() => editor.chain().focus().undo().run()}
+          title="Undo (Ctrl+Z)"
+        />
+        <ToolbarButton
+          icon={<Redo size={15} />}
+          onClick={() => editor.chain().focus().redo().run()}
+          title="Redo (Ctrl+Shift+Z)"
+        />
+      </ToolbarGroup>
+
+      <ToolbarDivider />
+
       <ToolbarGroup>
         <ToolbarButton
           icon={<Heading1 size={16} />}
@@ -594,5 +617,33 @@ function BubbleButton({
     >
       {icon}
     </button>
+  );
+}
+
+function EditorStatusBar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+  if (!editor) return null;
+
+  const text = editor.state.doc.textContent;
+  const charCount = text.length;
+  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: 16,
+        padding: '4px 16px',
+        borderTop: '1px solid var(--border)',
+        background: 'var(--bg-primary)',
+        fontSize: 11,
+        color: 'var(--text-tertiary)',
+        minHeight: 24,
+      }}
+    >
+      <span>{wordCount} words</span>
+      <span>{charCount} characters</span>
+    </div>
   );
 }
