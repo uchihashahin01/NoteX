@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "NoteX",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "identifier": "com.notex.app",
   "build": {
     "frontendDist": "../dist",
@@ -44,12 +44,8 @@
     ],
     "createUpdaterArtifacts": true,
     "linux": {
-      "deb": {
-        "desktopTemplate": "desktop-template.desktop"
-      },
-      "rpm": {
-        "desktopTemplate": "desktop-template.desktop"
-      },
+      "deb": {},
+      "rpm": {},
       "appimage": {
         "bundleMediaFramework": false
       }
