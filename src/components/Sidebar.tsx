@@ -8,6 +8,7 @@ import {
   Plus,
   FolderPlus,
   Search,
+  FileUp,
 } from 'lucide-react';
 import { useAppStore, type FileNode } from '../store/useAppStore';
 
@@ -58,6 +59,37 @@ export default function Sidebar() {
   );
 
   const [searchMode, setSearchMode] = useState(false);
+
+  const handleImportMd = useCallback(async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.md';
+    input.multiple = true;
+    input.onchange = async () => {
+      if (!input.files) return;
+      for (let i = 0; i < input.files.length; i++) {
+        const file = input.files[i];
+        // Read using webkitRelativePath or name — for Tauri we need the real path
+        // Since HTML file input doesn't give real paths, we read the content and create a note
+        const text = await file.text();
+        const name = file.name.replace(/\.md$/, '');
+        try {
+          const { invoke } = await import('@tauri-apps/api/core');
+          const path = await invoke<string>('create_note', {
+            folderPath: notesDirectory,
+            name,
+          });
+          await invoke('save_note', { path, content: text });
+        } catch (err) {
+          console.error('Failed to import file:', err);
+        }
+      }
+      // Reload file tree
+      const { loadFileTree } = useAppStore.getState();
+      await loadFileTree();
+    };
+    input.click();
+  }, [notesDirectory]);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -117,6 +149,11 @@ export default function Sidebar() {
             icon={<Search size={16} />}
             onClick={() => setSearchMode(!searchMode)}
             title="Search notes"
+          />
+          <IconButton
+            icon={<FileUp size={16} />}
+            onClick={handleImportMd}
+            title="Import .md file"
           />
           <IconButton
             icon={<Plus size={16} />}

@@ -4,6 +4,7 @@ import {
   Moon,
   Save,
   FileText,
+  Download,
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 
@@ -14,6 +15,7 @@ export default function TopBar() {
     sidebarOpen,
     toggleSidebar,
     activeNotePath,
+    activeNoteContent,
     isNoteDirty,
     saveNote,
   } = useAppStore();
@@ -89,12 +91,28 @@ export default function TopBar() {
       {/* Right */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         {activeNotePath && (
-          <TopBarButton
-            icon={<Save size={16} />}
-            onClick={saveNote}
-            title="Save (Ctrl+S)"
-            disabled={!isNoteDirty}
-          />
+          <>
+            <TopBarButton
+              icon={<Save size={16} />}
+              onClick={saveNote}
+              title="Save (Ctrl+S)"
+              disabled={!isNoteDirty}
+            />
+            <TopBarButton
+              icon={<Download size={16} />}
+              onClick={() => {
+                const name = activeNotePath.split('/').pop() || 'note.md';
+                const blob = new Blob([activeNoteContent], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = name;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              title="Export as .md file"
+            />
+          </>
         )}
         <TopBarButton
           icon={theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}

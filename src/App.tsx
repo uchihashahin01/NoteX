@@ -18,6 +18,7 @@ export default function App() {
     saveNote,
     isNoteDirty,
     setContextMenu,
+    openNote,
   } = useAppStore();
 
   useEffect(() => {
@@ -27,7 +28,12 @@ export default function App() {
   useEffect(() => {
     loadFileTree();
     loadNotesDirectory();
-  }, [loadFileTree, loadNotesDirectory]);
+    // Auto-open last note
+    const lastNote = localStorage.getItem('notex-last-note');
+    if (lastNote) {
+      openNote(lastNote);
+    }
+  }, [loadFileTree, loadNotesDirectory, openNote]);
 
   // Auto-save every 5 seconds if dirty
   useEffect(() => {

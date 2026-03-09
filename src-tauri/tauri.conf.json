@@ -42,7 +42,21 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "createUpdaterArtifacts": true
+    "createUpdaterArtifacts": true,
+    "linux": {
+      "deb": {
+        "desktopTemplate": "desktop-template.desktop"
+      },
+      "rpm": {
+        "desktopTemplate": "desktop-template.desktop"
+      },
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    },
+    "category": "Utility",
+    "shortDescription": "A modern, lightweight note-taking app for developers",
+    "longDescription": "NoteX is a Notion-like desktop note-taking app for developers. Features code highlighting for 40+ languages, markdown storage, dark/light mode, and system tray support."
   },
   "plugins": {
     "updater": {

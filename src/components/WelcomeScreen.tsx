@@ -94,6 +94,8 @@ export default function WelcomeScreen() {
             <Shortcut keys="Ctrl+U" action="Underline" />
             <Shortcut keys="Ctrl+E" action="Inline code" />
             <Shortcut keys="Ctrl+Shift+C" action="Code block" />
+            <Shortcut keys="Ctrl+Z" action="Undo" />
+            <Shortcut keys="Ctrl+Shift+Z" action="Redo" />
           </div>
         </div>
       </div>

@@ -44,6 +44,7 @@ interface AppState {
   createFolder: (parentPath: string, name: string) => Promise<string>;
   deleteItem: (path: string) => Promise<void>;
   renameItem: (oldPath: string, newName: string) => Promise<string>;
+  importMdFile: (sourcePath: string, targetFolder: string) => Promise<string>;
 
   // Search
   searchQuery: string;
@@ -113,6 +114,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const content = await invoke<string>('read_note', { path });
       set({ activeNotePath: path, activeNoteContent: content, isNoteDirty: false });
+      localStorage.setItem('notex-last-note', path);
     } catch (e) {
       console.error('Failed to open note:', e);
     }
@@ -154,6 +156,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (get().activeNotePath === oldPath) {
       set({ activeNotePath: newPath });
     }
+    await get().loadFileTree();
+    return newPath;
+  },
+  importMdFile: async (sourcePath, targetFolder) => {
+    const newPath = await invoke<string>('import_md_file', { sourcePath, targetFolder });
     await get().loadFileTree();
     return newPath;
   },
