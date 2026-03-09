@@ -6,6 +6,7 @@ import TopBar from './components/TopBar';
 import ContextMenu from './components/ContextMenu';
 import Modal from './components/Modal';
 import WelcomeScreen from './components/WelcomeScreen';
+import UpdateChecker from './components/UpdateChecker';
 
 export default function App() {
   const {
@@ -77,6 +78,7 @@ export default function App() {
       </div>
       <ContextMenu />
       <Modal />
+      <UpdateChecker />
     </div>
   );
 }
