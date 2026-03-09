@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import {
   PanelLeft,
   Sun,
@@ -5,6 +6,13 @@ import {
   Save,
   FileText,
   Download,
+  MoreHorizontal,
+  Type,
+  Maximize2,
+  Copy,
+  FolderInput,
+  Lock,
+  Check,
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 
@@ -18,7 +26,30 @@ export default function TopBar() {
     activeNoteContent,
     isNoteDirty,
     saveNote,
+    pageSmallText,
+    pageFullWidth,
+    pageLocked,
+    toggleSmallText,
+    toggleFullWidth,
+    toggleLockPage,
+    duplicateNote,
+    setModal,
   } = useAppStore();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
 
   const fileName = activeNotePath
     ? activeNotePath.split('/').pop()?.replace(/\.md$/, '') || 'Untitled'
@@ -112,6 +143,69 @@ export default function TopBar() {
               }}
               title="Export as .md file"
             />
+            {/* Three-dot menu */}
+            <div ref={menuRef} style={{ position: 'relative' }}>
+              <TopBarButton
+                icon={<MoreHorizontal size={16} />}
+                onClick={() => setMenuOpen((v) => !v)}
+                title="Page options"
+                active={menuOpen}
+              />
+              {menuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: 4,
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-lg)',
+                    minWidth: 200,
+                    padding: '4px 0',
+                    zIndex: 1000,
+                  }}
+                >
+                  <MenuToggleItem
+                    icon={<Type size={15} />}
+                    label="Small text"
+                    checked={pageSmallText}
+                    onClick={() => toggleSmallText()}
+                  />
+                  <MenuToggleItem
+                    icon={<Maximize2 size={15} />}
+                    label="Full width"
+                    checked={pageFullWidth}
+                    onClick={() => toggleFullWidth()}
+                  />
+                  <MenuDivider />
+                  <MenuItem
+                    icon={<Copy size={15} />}
+                    label="Duplicate"
+                    onClick={() => {
+                      duplicateNote();
+                      setMenuOpen(false);
+                    }}
+                  />
+                  <MenuItem
+                    icon={<FolderInput size={15} />}
+                    label="Move to"
+                    onClick={() => {
+                      setModal({ type: 'move-to', data: { path: activeNotePath } });
+                      setMenuOpen(false);
+                    }}
+                  />
+                  <MenuDivider />
+                  <MenuToggleItem
+                    icon={<Lock size={15} />}
+                    label="Lock page"
+                    checked={pageLocked}
+                    onClick={() => toggleLockPage()}
+                  />
+                </div>
+              )}
+            </div>
           </>
         )}
         <TopBarButton
@@ -172,5 +266,102 @@ function TopBarButton({
     >
       {icon}
     </button>
+  );
+}
+
+function MenuItem({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        width: '100%',
+        padding: '8px 14px',
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        color: 'var(--text-secondary)',
+        fontSize: 13,
+        textAlign: 'left',
+        transition: 'background 0.1s',
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)';
+        (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)';
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.background = 'transparent';
+        (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
+      }}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function MenuToggleItem({
+  icon,
+  label,
+  checked,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  checked: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        width: '100%',
+        padding: '8px 14px',
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        color: 'var(--text-secondary)',
+        fontSize: 13,
+        textAlign: 'left',
+        transition: 'background 0.1s',
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)';
+        (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)';
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.background = 'transparent';
+        (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
+      }}
+    >
+      {icon}
+      <span style={{ flex: 1 }}>{label}</span>
+      {checked && <Check size={14} style={{ color: 'var(--accent)' }} />}
+    </button>
+  );
+}
+
+function MenuDivider() {
+  return (
+    <div
+      style={{
+        height: 1,
+        background: 'var(--border)',
+        margin: '4px 0',
+      }}
+    />
   );
 }

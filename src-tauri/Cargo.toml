@@ -1,6 +1,6 @@
 [package]
 name = "notex"
-version = "0.2.1"
+version = "0.3.0"
 description = "NoteX - A Modern Note Taking App"
 authors = ["uchiha"]
 license = "MIT"

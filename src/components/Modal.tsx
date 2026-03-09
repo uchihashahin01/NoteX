@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { X } from 'lucide-react';
+import type { FileNode } from '../store/useAppStore';
+import { X, Folder, ChevronRight, ChevronDown } from 'lucide-react';
 
 export default function Modal() {
-  const { modal, setModal, createNote, createFolder, renameItem, openNote } = useAppStore();
+  const { modal, setModal, createNote, createFolder, renameItem, openNote, moveNoteTo, fileTree, notesDirectory } = useAppStore();
 
   if (!modal) return null;
 
@@ -61,6 +62,17 @@ export default function Modal() {
             onClose={() => setModal(null)}
             onRename={async (newName) => {
               await renameItem((modal.data?.path as string) || '', newName);
+              setModal(null);
+            }}
+          />
+        )}
+        {modal.type === 'move-to' && (
+          <MoveToModal
+            fileTree={fileTree}
+            notesDirectory={notesDirectory}
+            onClose={() => setModal(null)}
+            onMove={async (targetFolder) => {
+              await moveNoteTo(targetFolder);
               setModal(null);
             }}
           />
@@ -218,6 +230,127 @@ function RenameModal({
       <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
         <ModalButton label="Cancel" onClick={onClose} variant="secondary" />
         <ModalButton label="Rename" onClick={handleSubmit} variant="primary" />
+      </div>
+    </>
+  );
+}
+
+function MoveToModal({
+  fileTree,
+  notesDirectory,
+  onClose,
+  onMove,
+}: {
+  fileTree: FileNode[];
+  notesDirectory: string;
+  onClose: () => void;
+  onMove: (targetFolder: string) => void;
+}) {
+  const [selectedFolder, setSelectedFolder] = useState<string>(notesDirectory);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set([notesDirectory]));
+
+  const toggleExpand = (path: string) => {
+    const next = new Set(expanded);
+    if (next.has(path)) next.delete(path);
+    else next.add(path);
+    setExpanded(next);
+  };
+
+  const renderFolders = (nodes: FileNode[], depth: number) => {
+    return nodes
+      .filter((n) => n.is_dir)
+      .map((node) => {
+        const isExpanded = expanded.has(node.path);
+        const isSelected = selectedFolder === node.path;
+        const children = node.children?.filter((c) => c.is_dir) || [];
+        return (
+          <div key={node.path}>
+            <div
+              onClick={() => setSelectedFolder(node.path)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 8px',
+                paddingLeft: 8 + depth * 16,
+                cursor: 'pointer',
+                borderRadius: 'var(--radius-sm)',
+                background: isSelected ? 'var(--bg-active)' : 'transparent',
+                color: isSelected ? 'var(--accent)' : 'var(--text-primary)',
+                fontSize: 13,
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)';
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent';
+              }}
+            >
+              {children.length > 0 ? (
+                <span
+                  onClick={(e) => { e.stopPropagation(); toggleExpand(node.path); }}
+                  style={{ display: 'flex', alignItems: 'center' }}
+                >
+                  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </span>
+              ) : (
+                <span style={{ width: 14 }} />
+              )}
+              <Folder size={14} />
+              <span>{node.name}</span>
+            </div>
+            {isExpanded && children.length > 0 && renderFolders(children, depth + 1)}
+          </div>
+        );
+      });
+  };
+
+  const isRootSelected = selectedFolder === notesDirectory;
+
+  return (
+    <>
+      <ModalHeader title="Move to" onClose={onClose} />
+      <div
+        style={{
+          marginTop: 16,
+          maxHeight: 300,
+          overflowY: 'auto',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: 4,
+        }}
+      >
+        {/* Root folder */}
+        <div
+          onClick={() => setSelectedFolder(notesDirectory)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 8px',
+            cursor: 'pointer',
+            borderRadius: 'var(--radius-sm)',
+            background: isRootSelected ? 'var(--bg-active)' : 'transparent',
+            color: isRootSelected ? 'var(--accent)' : 'var(--text-primary)',
+            fontSize: 13,
+            fontWeight: 500,
+          }}
+          onMouseEnter={(e) => {
+            if (!isRootSelected) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)';
+          }}
+          onMouseLeave={(e) => {
+            if (!isRootSelected) (e.currentTarget as HTMLElement).style.background = 'transparent';
+          }}
+        >
+          <Folder size={14} />
+          <span>NoteX (root)</span>
+        </div>
+        {renderFolders(fileTree, 1)}
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
+        <ModalButton label="Cancel" onClick={onClose} variant="secondary" />
+        <ModalButton label="Move" onClick={() => onMove(selectedFolder)} variant="primary" />
       </div>
     </>
   );

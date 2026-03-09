@@ -130,7 +130,7 @@ lowlight.register('ini', ini);
 lowlight.register('makefile', makefile);
 
 export default function Editor() {
-  const { activeNoteContent, setNoteContent, activeNotePath } = useAppStore();
+  const { activeNoteContent, setNoteContent, activeNotePath, pageSmallText, pageFullWidth, pageLocked } = useAppStore();
   const isLoadingRef = useRef(false);
   const [toolbarVisible, setToolbarVisible] = useState(true);
 
@@ -170,6 +170,7 @@ export default function Editor() {
       HorizontalRule,
     ],
     content: '',
+    editable: !pageLocked,
     onUpdate: ({ editor }) => {
       if (isLoadingRef.current) return;
       const html = editor.getHTML();
@@ -254,6 +255,12 @@ export default function Editor() {
     [handleImageFile]
   );
 
+  // Toggle editor editable when lock changes
+  useEffect(() => {
+    if (!editor) return;
+    editor.setEditable(!pageLocked);
+  }, [pageLocked, editor]);
+
   // Load content when active note changes
   useEffect(() => {
     if (!editor || !activeNotePath) return;
@@ -327,8 +334,13 @@ export default function Editor() {
       </BubbleMenu>
 
       {/* Editor content */}
-      <div className="tiptap-editor" onClick={() => !toolbarVisible && setToolbarVisible(true)}>
-        <EditorContent editor={editor} />
+      <div className="tiptap-editor-scroll">
+        <div
+          className={`tiptap-editor${pageFullWidth ? ' full-width' : ''}${pageSmallText ? ' small-text' : ''}`}
+          onClick={() => !toolbarVisible && setToolbarVisible(true)}
+        >
+          <EditorContent editor={editor} />
+        </div>
       </div>
 
       {/* Status bar */}

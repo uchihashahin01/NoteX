@@ -64,6 +64,18 @@ interface AppState {
   // Modal
   modal: { type: string; data?: Record<string, unknown> } | null;
   setModal: (modal: { type: string; data?: Record<string, unknown> } | null) => void;
+
+  // Page settings (per-note, persisted in localStorage)
+  pageSmallText: boolean;
+  pageFullWidth: boolean;
+  pageLocked: boolean;
+  toggleSmallText: () => void;
+  toggleFullWidth: () => void;
+  toggleLockPage: () => void;
+
+  // Page operations
+  duplicateNote: () => Promise<void>;
+  moveNoteTo: (targetFolder: string) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -206,4 +218,36 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Modal
   modal: null,
   setModal: (modal) => set({ modal }),
+
+  // Page settings
+  pageSmallText: false,
+  pageFullWidth: false,
+  pageLocked: false,
+  toggleSmallText: () => set((s) => ({ pageSmallText: !s.pageSmallText })),
+  toggleFullWidth: () => set((s) => ({ pageFullWidth: !s.pageFullWidth })),
+  toggleLockPage: () => set((s) => ({ pageLocked: !s.pageLocked })),
+
+  // Page operations
+  duplicateNote: async () => {
+    const { activeNotePath, loadFileTree, openNote } = get();
+    if (!activeNotePath) return;
+    try {
+      const newPath = await invoke<string>('duplicate_note', { path: activeNotePath });
+      await loadFileTree();
+      await openNote(newPath);
+    } catch (e) {
+      console.error('Failed to duplicate note:', e);
+    }
+  },
+  moveNoteTo: async (targetFolder: string) => {
+    const { activeNotePath, loadFileTree, openNote } = get();
+    if (!activeNotePath) return;
+    try {
+      const newPath = await invoke<string>('move_note', { path: activeNotePath, targetFolder });
+      await loadFileTree();
+      await openNote(newPath);
+    } catch (e) {
+      console.error('Failed to move note:', e);
+    }
+  },
 }));

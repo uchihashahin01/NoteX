@@ -300,6 +300,78 @@ fn import_md_file(source_path: String, target_folder: String) -> Result<String, 
 }
 
 #[tauri::command]
+fn duplicate_note(path: String) -> Result<String, String> {
+    let notes_dir = get_notes_dir();
+    let src = PathBuf::from(&path);
+    if !src.starts_with(&notes_dir) {
+        return Err("Access denied: path outside notes directory".to_string());
+    }
+    if !src.exists() || src.is_dir() {
+        return Err("Source file does not exist".to_string());
+    }
+
+    let parent = src.parent().ok_or("Invalid path")?;
+    let stem = src
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+
+    let mut counter = 1;
+    let dest = loop {
+        let candidate = parent.join(format!("{} (Copy{}).md", stem, if counter == 1 { String::new() } else { format!(" {}", counter) }));
+        if !candidate.exists() {
+            break candidate;
+        }
+        counter += 1;
+    };
+
+    fs::copy(&src, &dest).map_err(|e| e.to_string())?;
+    Ok(dest.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn move_note(path: String, target_folder: String) -> Result<String, String> {
+    let notes_dir = get_notes_dir();
+    let src = PathBuf::from(&path);
+    let dest_dir = PathBuf::from(&target_folder);
+
+    if !src.starts_with(&notes_dir) || !dest_dir.starts_with(&notes_dir) {
+        return Err("Access denied: path outside notes directory".to_string());
+    }
+    if !src.exists() || src.is_dir() {
+        return Err("Source file does not exist".to_string());
+    }
+    if !dest_dir.is_dir() {
+        return Err("Target folder does not exist".to_string());
+    }
+
+    let file_name = src
+        .file_name()
+        .ok_or("Invalid file name")?
+        .to_string_lossy()
+        .to_string();
+    let mut dest_path = dest_dir.join(&file_name);
+
+    if dest_path.exists() {
+        let stem = src
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let mut counter = 1;
+        loop {
+            dest_path = dest_dir.join(format!("{} ({}).md", stem, counter));
+            if !dest_path.exists() {
+                break;
+            }
+            counter += 1;
+        }
+    }
+
+    fs::rename(&src, &dest_path).map_err(|e| e.to_string())?;
+    Ok(dest_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 fn search_notes(query: String) -> Vec<(String, String, usize)> {
     let notes_dir = get_notes_dir();
     let mut results: Vec<(String, String, usize)> = Vec::new();
@@ -418,6 +490,8 @@ pub fn run() {
             save_image,
             search_notes,
             import_md_file,
+            duplicate_note,
+            move_note,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
